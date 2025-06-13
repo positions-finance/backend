@@ -1,0 +1,136 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: poc-consumers-postgres
+    environment:
+      POSTGRES_DB: blockchain_consumer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: poc-consumers-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: poc-consumers-app
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      API_PORT: 3002
+      API_HOST: 0.0.0.0
+
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: blockchain_consumer
+      DB_LOGGING: false
+      DB_SSL: false
+
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+      REDIS_CHANNEL: blockchain-events
+      REDIS_TLS: false
+
+      # Blockchain configuration (you'll need to set these)
+      PRIVATE_KEY: ${PRIVATE_KEY:-}
+      BEPOLIA_RPC_URL: ${BEPOLIA_RPC_URL:-https://bartio.rpc.berachain.com/}
+      POSITIONS_NFT_ADDRESS: ${POSITIONS_NFT_ADDRESS:-0x43c41E56Fb67ee48951af84298a97C261dFC1690}
+
+      # Application configuration
+      LOG_LEVEL: info
+      HEALTH_CHECK_INTERVAL: 60000
+      RETRY_DELAY: 5000
+      MAX_RETRIES: 5
+      PROCESSING_BATCH_SIZE: 100
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Development version (optional)
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: poc-consumers-app-dev
+    ports:
+      - "3003:3002"
+    environment:
+      NODE_ENV: development
+      API_PORT: 3002
+      API_HOST: 0.0.0.0
+
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: blockchain_consumer
+      DB_LOGGING: true
+      DB_SSL: false
+
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+      REDIS_CHANNEL: blockchain-events
+      REDIS_TLS: false
+
+      # Blockchain configuration
+      PRIVATE_KEY: ${PRIVATE_KEY:-}
+      BEPOLIA_RPC_URL: ${BEPOLIA_RPC_URL:-https://bartio.rpc.berachain.com/}
+      POSITIONS_NFT_ADDRESS: ${POSITIONS_NFT_ADDRESS:-0x43c41E56Fb67ee48951af84298a97C261dFC1690}
+
+      # Application configuration
+      LOG_LEVEL: debug
+      HEALTH_CHECK_INTERVAL: 60000
+      RETRY_DELAY: 5000
+      MAX_RETRIES: 5
+      PROCESSING_BATCH_SIZE: 100
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+  redis_data:

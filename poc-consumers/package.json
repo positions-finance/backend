@@ -1,0 +1,41 @@
+{
+  "name": "poc-consumers",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && node scripts/build-paths.js",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "migration:generate": "yarn typeorm migration:generate -d src/database/data-source.ts",
+    "migration:run": "yarn typeorm migration:run -d src/database/data-source.ts",
+    "migration:revert": "yarn typeorm migration:revert -d src/database/data-source.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "ethers": "6",
+    "express": "^5.1.0",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.5.2",
+    "pg": "^8.16.0",
+    "redis": "^4.7.1",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.24",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
+    "@types/node": "^20.10.5",
+    "@types/winston": "^2.4.4",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.8.3"
+  }
+}
